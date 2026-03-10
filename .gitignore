@@ -39,3 +39,18 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# sqlite database files
+*.db
+*.db-wal
+*.db-shm
+
+# internal tooling
+.gstack/
+.claude/
+tasks/
+research/
+design-system/
+run-prompts.sh
+CLAUDE.md
+TODOS.md
