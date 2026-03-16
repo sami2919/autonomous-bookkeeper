@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireApiKey } from '@/lib/auth';
 import { getLedgerEntries } from '@/lib/queries';
+import { classifyApiError } from '@/lib/errors';
 
 export async function GET(request: NextRequest): Promise<NextResponse> {
   const authError = requireApiKey(request);
@@ -27,9 +28,10 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     return NextResponse.json({ data });
   } catch (err) {
     console.error('[GET /api/ledger]', err);
+    const classified = classifyApiError(err);
     return NextResponse.json(
-      { data: null, error: 'Failed to fetch ledger entries' },
-      { status: 500 }
+      { data: null, error: classified.message },
+      { status: classified.status }
     );
   }
 }

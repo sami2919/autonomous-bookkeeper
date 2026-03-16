@@ -49,4 +49,87 @@ describe('classifyApiError', () => {
     expect(result.status).toBe(500);
     expect(result.message).toMatch(/unexpected error/i);
   });
+
+  // Timeout errors → 504
+  describe('timeout errors', () => {
+    it('classifies AbortError as 504', () => {
+      const err = new Error('The operation was aborted');
+      err.name = 'AbortError';
+      const result = classifyApiError(err);
+      expect(result.status).toBe(504);
+      expect(result.message).toMatch(/timed out/i);
+    });
+
+    it('classifies TimeoutError as 504', () => {
+      const err = new Error('Request timed out');
+      err.name = 'TimeoutError';
+      const result = classifyApiError(err);
+      expect(result.status).toBe(504);
+      expect(result.message).toMatch(/timed out/i);
+    });
+
+    it('classifies error message containing "timeout" as 504', () => {
+      const result = classifyApiError(new Error('Connection timeout after 30s'));
+      expect(result.status).toBe(504);
+      expect(result.message).toMatch(/timed out/i);
+    });
+  });
+
+  // Network errors → 503
+  describe('network errors', () => {
+    it('classifies ECONNRESET as 503', () => {
+      const result = classifyApiError(new Error('read ECONNRESET'));
+      expect(result.status).toBe(503);
+      expect(result.message).toMatch(/network error/i);
+    });
+
+    it('classifies ECONNREFUSED as 503', () => {
+      const result = classifyApiError(new Error('connect ECONNREFUSED 127.0.0.1:443'));
+      expect(result.status).toBe(503);
+      expect(result.message).toMatch(/network error/i);
+    });
+
+    it('classifies ETIMEDOUT as 503', () => {
+      const result = classifyApiError(new Error('connect ETIMEDOUT 1.2.3.4:443'));
+      expect(result.status).toBe(503);
+      expect(result.message).toMatch(/network error/i);
+    });
+
+    it('classifies "fetch failed" as 503', () => {
+      const result = classifyApiError(new Error('fetch failed'));
+      expect(result.status).toBe(503);
+      expect(result.message).toMatch(/network error/i);
+    });
+  });
+
+  // Malformed response errors → 502
+  describe('malformed response errors', () => {
+    it('classifies SyntaxError as 502', () => {
+      const err = new SyntaxError('Unexpected token < in JSON at position 0');
+      const result = classifyApiError(err);
+      expect(result.status).toBe(502);
+      expect(result.message).toMatch(/malformed response/i);
+    });
+
+    it('classifies error message containing "json" as 502', () => {
+      const result = classifyApiError(new Error('Invalid JSON in response body'));
+      expect(result.status).toBe(502);
+      expect(result.message).toMatch(/malformed response/i);
+    });
+  });
+
+  // Model refusal errors → 422
+  describe('model refusal errors', () => {
+    it('classifies error message containing "refusal" as 422', () => {
+      const result = classifyApiError(new Error('Model returned a refusal'));
+      expect(result.status).toBe(422);
+      expect(result.message).toMatch(/declined/i);
+    });
+
+    it('classifies error message containing "content_filter" as 422', () => {
+      const result = classifyApiError(new Error('Blocked by content_filter'));
+      expect(result.status).toBe(422);
+      expect(result.message).toMatch(/declined/i);
+    });
+  });
 });

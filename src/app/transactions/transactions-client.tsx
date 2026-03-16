@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Play, Database } from "lucide-react";
 import TransactionTable, {
@@ -59,6 +59,7 @@ export default function TransactionsClient({ initialTransactions }: Props) {
   const [processing, setProcessing] = useState(false);
   const [seeding, setSeeding] = useState(false);
   const [activityEvents, setActivityEvents] = useState<ActivityEvent[]>([]);
+  const processingRef = useRef(false);
 
   useEffect(() => {
     setTransactions(initialTransactions);
@@ -81,6 +82,8 @@ export default function TransactionsClient({ initialTransactions }: Props) {
   }
 
   async function handleProcess() {
+    if (processingRef.current) return;
+    processingRef.current = true;
     setProcessing(true);
     setActivityEvents([]);
 
@@ -132,6 +135,7 @@ export default function TransactionsClient({ initialTransactions }: Props) {
       setError(err instanceof Error ? err.message : 'Processing failed');
     } finally {
       setProcessing(false);
+      processingRef.current = false;
     }
   }
 

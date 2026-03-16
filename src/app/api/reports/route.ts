@@ -3,6 +3,7 @@ import { db } from '@/db/index';
 import { getTrialBalance, getIncomeStatement, getBalanceSheet } from '@/agents/reporting';
 import { requireApiKey } from '@/lib/auth';
 import { rateLimit } from '@/lib/rate-limit';
+import { classifyApiError } from '@/lib/errors';
 
 const VALID_REPORT_TYPES = ['trial-balance', 'income-statement', 'balance-sheet'] as const;
 type ReportType = (typeof VALID_REPORT_TYPES)[number];
@@ -96,6 +97,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     return NextResponse.json({ data: report });
   } catch (err) {
     console.error('[GET /api/reports]', err);
-    return NextResponse.json({ data: null, error: 'Failed to generate report' }, { status: 500 });
+    const classified = classifyApiError(err);
+    return NextResponse.json({ data: null, error: classified.message }, { status: classified.status });
   }
 }
